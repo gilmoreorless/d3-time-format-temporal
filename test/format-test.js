@@ -1,5 +1,4 @@
 var tape = require("tape"),
-    time = require("d3-time"),
     timeFormat = require("../"),
     date = require("./date");
 
@@ -13,26 +12,27 @@ var formatMillisecond = timeFormat.timeFormat(".%L"),
     formatYear = timeFormat.timeFormat("%Y");
 
 function multi(d) {
-  return (time.timeSecond(d) < d ? formatMillisecond
-      : time.timeMinute(d) < d ? formatSecond
-      : time.timeHour(d) < d ? formatMinute
-      : time.timeDay(d) < d ? formatHour
-      : time.timeMonth(d) < d ? (time.timeWeek(d) < d ? formatDay : formatWeek)
-      : time.timeYear(d) < d ? formatMonth
+  return (d.millisecond > 0 ? formatMillisecond
+      : d.second > 0 ? formatSecond
+      : d.minute > 0 ? formatMinute
+      : d.hour > 0 ? formatHour
+      : d.day > 1 ? (d.dayOfWeek > 1 ? formatDay : formatWeek)
+      : d.month > 1 ? formatMonth
       : formatYear)(d);
 }
 
-tape("timeFormat(date) coerces the specified date to a Date", function(test) {
-  var f = timeFormat.timeFormat("%c");
-  test.equal(f(+date.local(1990, 0, 1)), "1/1/1990, 12:00:00 AM");
-  test.equal(f(+date.local(1990, 0, 2)), "1/2/1990, 12:00:00 AM");
-  test.equal(f(+date.local(1990, 0, 3)), "1/3/1990, 12:00:00 AM");
-  test.equal(f(+date.local(1990, 0, 4)), "1/4/1990, 12:00:00 AM");
-  test.equal(f(+date.local(1990, 0, 5)), "1/5/1990, 12:00:00 AM");
-  test.equal(f(+date.local(1990, 0, 6)), "1/6/1990, 12:00:00 AM");
-  test.equal(f(+date.local(1990, 0, 7)), "1/7/1990, 12:00:00 AM");
-  test.end();
-});
+// DISABLED: I'm not doing coercion in this experiment
+// tape("timeFormat(date) coerces the specified date to a Date", function(test) {
+//   var f = timeFormat.timeFormat("%c");
+//   test.equal(f(+date.local(1990, 0, 1)), "1/1/1990, 12:00:00 AM");
+//   test.equal(f(+date.local(1990, 0, 2)), "1/2/1990, 12:00:00 AM");
+//   test.equal(f(+date.local(1990, 0, 3)), "1/3/1990, 12:00:00 AM");
+//   test.equal(f(+date.local(1990, 0, 4)), "1/4/1990, 12:00:00 AM");
+//   test.equal(f(+date.local(1990, 0, 5)), "1/5/1990, 12:00:00 AM");
+//   test.equal(f(+date.local(1990, 0, 6)), "1/6/1990, 12:00:00 AM");
+//   test.equal(f(+date.local(1990, 0, 7)), "1/7/1990, 12:00:00 AM");
+//   test.end();
+// });
 
 tape("timeFormat(\"%a\")(date) formats abbreviated weekdays", function(test) {
   var f = timeFormat.timeFormat("%a");
@@ -285,11 +285,12 @@ tape("timeFormat(\"%Y\")(date) formats zero-padded four-digit years", function(t
   test.end();
 });
 
-tape("timeFormat(\"%Z\")(date) formats time zones", function(test) {
-  var f = timeFormat.timeFormat("%Z");
-  test.equal(f(date.local(1990, 0, 1)), "-0800");
-  test.end();
-});
+// DISABLED: DateTime doesn't have time zones
+// tape("timeFormat(\"%Z\")(date) formats time zones", function(test) {
+//   var f = timeFormat.timeFormat("%Z");
+//   test.equal(f(date.local(1990, 0, 1)), "-0800");
+//   test.end();
+// });
 
 tape("timeFormat(\"%%\")(date) formats literal percent signs", function(test) {
   var f = timeFormat.timeFormat("%%");

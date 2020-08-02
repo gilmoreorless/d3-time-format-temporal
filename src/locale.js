@@ -2,7 +2,6 @@ import {
   timeDay,
   timeSunday,
   timeMonday,
-  timeThursday,
   timeYear,
   utcDay,
   utcSunday,
@@ -10,6 +9,8 @@ import {
   utcThursday,
   utcYear
 } from "d3-time";
+
+const { Temporal } = require("proposal-temporal");
 
 function localDate(d) {
   if (0 <= d.y && d.y < 100) {
@@ -171,7 +172,7 @@ export default function formatLocale(locale) {
           pad,
           format;
 
-      if (!(date instanceof Date)) date = new Date(+date);
+      if (!(date instanceof Temporal.DateTime)) date = Temporal.DateTime.from(date);
 
       while (++i < n) {
         if (specifier.charCodeAt(i) === 37) {
@@ -308,27 +309,27 @@ export default function formatLocale(locale) {
   }
 
   function formatShortWeekday(d) {
-    return locale_shortWeekdays[d.getDay()];
+    return locale_shortWeekdays[d.dayOfWeek % 7];
   }
 
   function formatWeekday(d) {
-    return locale_weekdays[d.getDay()];
+    return locale_weekdays[d.dayOfWeek % 7];
   }
 
   function formatShortMonth(d) {
-    return locale_shortMonths[d.getMonth()];
+    return locale_shortMonths[d.month - 1];
   }
 
   function formatMonth(d) {
-    return locale_months[d.getMonth()];
+    return locale_months[d.month - 1];
   }
 
   function formatPeriod(d) {
-    return locale_periods[+(d.getHours() >= 12)];
+    return locale_periods[+(d.hour >= 12)];
   }
 
   function formatQuarter(d) {
-    return 1 + ~~(d.getMonth() / 3);
+    return Math.ceil(d.month / 3);
   }
 
   function formatUTCShortWeekday(d) {
@@ -506,77 +507,71 @@ function parseUnixTimestampSeconds(d, string, i) {
 }
 
 function formatDayOfMonth(d, p) {
-  return pad(d.getDate(), p, 2);
+  return pad(d.day, p, 2);
 }
 
 function formatHour24(d, p) {
-  return pad(d.getHours(), p, 2);
+  return pad(d.hour, p, 2);
 }
 
 function formatHour12(d, p) {
-  return pad(d.getHours() % 12 || 12, p, 2);
+  return pad(d.hour % 12 || 12, p, 2);
 }
 
 function formatDayOfYear(d, p) {
-  return pad(1 + timeDay.count(timeYear(d), d), p, 3);
+  return pad(d.dayOfYear, p, 3);
 }
 
 function formatMilliseconds(d, p) {
-  return pad(d.getMilliseconds(), p, 3);
+  return pad(d.millisecond, p, 3);
 }
 
 function formatMicroseconds(d, p) {
-  return formatMilliseconds(d, p) + "000";
+  return formatMilliseconds(d, p) + pad(d.microsecond, p, 3);
 }
 
 function formatMonthNumber(d, p) {
-  return pad(d.getMonth() + 1, p, 2);
+  return pad(d.month, p, 2);
 }
 
 function formatMinutes(d, p) {
-  return pad(d.getMinutes(), p, 2);
+  return pad(d.minute, p, 2);
 }
 
 function formatSeconds(d, p) {
-  return pad(d.getSeconds(), p, 2);
+  return pad(d.second, p, 2);
 }
 
 function formatWeekdayNumberMonday(d) {
-  var day = d.getDay();
-  return day === 0 ? 7 : day;
+  return d.dayOfWeek;
 }
 
 function formatWeekNumberSunday(d, p) {
-  return pad(timeSunday.count(timeYear(d) - 1, d), p, 2);
+  return pad(timeSunday.count(timeYear(d).minus({ nanoseconds: 1 }), d), p, 2);
 }
 
 function formatWeekNumberISO(d, p) {
-  var day = d.getDay();
-  d = (day >= 4 || day === 0) ? timeThursday(d) : timeThursday.ceil(d);
-  return pad(timeThursday.count(timeYear(d), d) + (timeYear(d).getDay() === 4), p, 2);
+  return pad(d.weekOfYear, p, 2);
 }
 
 function formatWeekdayNumberSunday(d) {
-  return d.getDay();
+  return d.dayOfWeek;
 }
 
 function formatWeekNumberMonday(d, p) {
-  return pad(timeMonday.count(timeYear(d) - 1, d), p, 2);
+  return pad(timeMonday.count(timeYear(d).minus({ nanoseconds: 1 }), d), p, 2);
 }
 
 function formatYear(d, p) {
-  return pad(d.getFullYear() % 100, p, 2);
+  return pad(d.year % 100, p, 2);
 }
 
 function formatFullYear(d, p) {
-  return pad(d.getFullYear() % 10000, p, 4);
+  return pad(d.year % 10000, p, 4);
 }
 
-function formatZone(d) {
-  var z = d.getTimezoneOffset();
-  return (z > 0 ? "-" : (z *= -1, "+"))
-      + pad(z / 60 | 0, "0", 2)
-      + pad(z % 60, "0", 2);
+function formatZone() {
+  return 'Z'; // DISABLED: DateTime doesn't have time zones
 }
 
 function formatUTCDayOfMonth(d, p) {
