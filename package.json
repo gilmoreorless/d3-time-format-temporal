@@ -30,13 +30,14 @@
     "locale/*.json"
   ],
   "scripts": {
+    "postinstall": "[[ $PWD = $INIT_CWD ]] && patch-package || echo ''",
     "pretest": "rollup -c",
     "test": "TZ=America/Los_Angeles tape 'test/**/*-test.js' && eslint src",
     "prepublishOnly": "rm -rf dist && yarn test",
     "postpublish": "git push && git push --tags && cd ../d3.github.com && git pull && cp ../${npm_package_name}/dist/${npm_package_name}.js ${npm_package_name}.v${npm_package_version%%.*}.js && cp ../${npm_package_name}/dist/${npm_package_name}.min.js ${npm_package_name}.v${npm_package_version%%.*}.min.js && git add ${npm_package_name}.v${npm_package_version%%.*}.js ${npm_package_name}.v${npm_package_version%%.*}.min.js && git commit -m \"${npm_package_name} ${npm_package_version}\" && git push && cd - && zip -j dist/${npm_package_name}.zip -- LICENSE README.md dist/${npm_package_name}.js dist/${npm_package_name}.min.js"
   },
   "dependencies": {
-    "d3-time": "1",
+    "d3-time": "gilmoreorless/d3-time-temporal.git#temporal-build-2",
     "proposal-temporal": "^0.3.1"
   },
   "sideEffects": [
@@ -45,6 +46,7 @@
   "devDependencies": {
     "d3-queue": "3",
     "eslint": "6",
+    "patch-package": "6",
     "rollup": "1",
     "rollup-plugin-terser": "5",
     "tape": "5"
