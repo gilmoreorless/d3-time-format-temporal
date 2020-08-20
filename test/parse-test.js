@@ -255,6 +255,18 @@ tape("timeParse(\"%Y %q %m\")(date) gives the month number priority", function(t
   test.end();
 });
 
+tape("timeParse(\"%Q\")(date) parses Unix timestamp in milliseconds", function(test) {
+  var p = timeFormat.timeParse("%Q");
+  test.deepEqual(p("665463845006"), date.local(1991, 1, 2, 3, 4, 5, 6));
+  test.end();
+});
+
+tape("timeParse(\"%s\")(date) parses Unix timestamp in seconds", function(test) {
+  var p = timeFormat.timeParse("%s");
+  test.deepEqual(p("665463845"), date.local(1991, 1, 2, 3, 4, 5));
+  test.end();
+});
+
 tape("timeParse(\"%% %m/%d/%Y\")(date) parses literal %", function(test) {
   var p = timeFormat.timeParse("%% %m/%d/%Y");
   test.deepEqual(p("% 01/01/1990"), date.local(1990, 0, 1));
@@ -265,32 +277,32 @@ tape("timeParse(\"%% %m/%d/%Y\")(date) parses literal %", function(test) {
 
 tape("timeParse(\"%m/%d/%Y %Z\")(date) parses timezone offset", function(test) {
   var p = timeFormat.timeParse("%m/%d/%Y %Z");
-  test.deepEqual(p("01/02/1990 +0000"), date.local(1990, 0, 1, 16));
-  test.deepEqual(p("01/02/1990 +0100"), date.local(1990, 0, 1, 15));
-  test.deepEqual(p("01/02/1990 +0130"), date.local(1990, 0, 1, 14, 30));
-  test.deepEqual(p("01/02/1990 -0100"), date.local(1990, 0, 1, 17));
-  test.deepEqual(p("01/02/1990 -0130"), date.local(1990, 0, 1, 17, 30));
-  test.deepEqual(p("01/02/1990 -0800"), date.local(1990, 0, 2, 0));
+  test.deepEqual(p("01/02/1990 +0000"), date.utc(1990, 0, 2));
+  test.deepEqual(p("01/02/1990 +0100"), date.utc(1990, 0, 1, 23));
+  test.deepEqual(p("01/02/1990 +0130"), date.utc(1990, 0, 1, 22, 30));
+  test.deepEqual(p("01/02/1990 -0100"), date.utc(1990, 0, 2, 1));
+  test.deepEqual(p("01/02/1990 -0130"), date.utc(1990, 0, 2, 1, 30));
+  test.deepEqual(p("01/02/1990 -0800"), date.utc(1990, 0, 2, 8));
   test.end();
 });
 
 tape("timeParse(\"%m/%d/%Y %Z\")(date) parses timezone offset in the form '+-hh:mm'", function(test) {
   var p = timeFormat.timeParse("%m/%d/%Y %Z");
-  test.deepEqual(p("01/02/1990 +01:30"), date.local(1990, 0, 1, 14, 30));
-  test.deepEqual(p("01/02/1990 -01:30"), date.local(1990, 0, 1, 17, 30));
+  test.deepEqual(p("01/02/1990 +01:30"), date.utc(1990, 0, 1, 22, 30));
+  test.deepEqual(p("01/02/1990 -01:30"), date.utc(1990, 0, 2, 1, 30));
   test.end();
 });
 
 tape("timeParse(\"%m/%d/%Y %Z\")(date) parses timezone offset in the form '+-hh'", function(test) {
   var p = timeFormat.timeParse("%m/%d/%Y %Z");
-  test.deepEqual(p("01/02/1990 +01"), date.local(1990, 0, 1, 15));
-  test.deepEqual(p("01/02/1990 -01"), date.local(1990, 0, 1, 17));
+  test.deepEqual(p("01/02/1990 +01"), date.utc(1990, 0, 1, 23));
+  test.deepEqual(p("01/02/1990 -01"), date.utc(1990, 0, 2, 1));
   test.end();
 });
 
 tape("timeParse(\"%m/%d/%Y %Z\")(date) parses timezone offset in the form 'Z'", function(test) {
   var p = timeFormat.timeParse("%m/%d/%Y %Z");
-  test.deepEqual(p("01/02/1990 Z"), date.local(1990, 0, 1, 16));
+  test.deepEqual(p("01/02/1990 Z"), date.utc(1990, 0, 2));
   test.end();
 });
 

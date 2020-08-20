@@ -12,22 +12,23 @@ import {
 
 const { Temporal } = require("proposal-temporal");
 
+// When using Temporal.DateTime there's no concept of "local" vs "UTC".
 function localDate(d) {
-  if (0 <= d.y && d.y < 100) {
-    var date = new Date(-1, d.m, d.d, d.H, d.M, d.S, d.L);
-    date.setFullYear(d.y);
-    return date;
-  }
-  return new Date(d.y, d.m, d.d, d.H, d.M, d.S, d.L);
+  return utcDate(d);
 }
 
 function utcDate(d) {
-  if (0 <= d.y && d.y < 100) {
-    var date = new Date(Date.UTC(-1, d.m, d.d, d.H, d.M, d.S, d.L));
-    date.setUTCFullYear(d.y);
-    return date;
+  var day = d.d, dayDiff = 0;
+  if ("w" in d) {
+    dayDiff = day - 1;
+    day = 1;
   }
-  return new Date(Date.UTC(d.y, d.m, d.d, d.H, d.M, d.S, d.L));
+  var dateTime = new Temporal.DateTime(d.y, d.m, day, d.H, d.M, d.S, d.L);
+  if (!dayDiff) return dateTime;
+  // TODO: Simplify this when negative durations are supported in Temporal
+  return dayDiff > 0 ?
+    dateTime.plus({ days: dayDiff }) :
+    dateTime.minus({ days: -dayDiff });
 }
 
 function newDate(y, m, d) {
@@ -198,8 +199,11 @@ export default function formatLocale(locale) {
       if (i != string.length) return null;
 
       // If a UNIX timestamp is specified, return it.
-      if ("Q" in d) return new Date(d.Q);
-      if ("s" in d) return new Date(d.s * 1000 + ("L" in d ? d.L : 0));
+      // (Assumes UTC even though Temporal.DateTime has no time zone)
+      if ("Q" in d || "s" in d) {
+        var millis = "Q" in d ? d.Q : d.s * 1000 + ("L" in d ? d.L : 0);
+        return Temporal.Absolute.fromEpochMilliseconds(millis).toDateTime('UTC');
+      }
 
       // If this is utcParse, never use the local timezone.
       if (Z && !("Z" in d)) d.Z = 0;
@@ -208,40 +212,44 @@ export default function formatLocale(locale) {
       if ("p" in d) d.H = d.H % 12 + d.p * 12;
 
       // If the month was not specified, inherit from the quarter.
-      if (d.m === undefined) d.m = "q" in d ? d.q : 0;
+      if (d.m === undefined) d.m = "q" in d ? d.q : 1;
 
       // Convert day-of-week and week-of-year to day-of-year.
       if ("V" in d) {
         if (d.V < 1 || d.V > 53) return null;
         if (!("w" in d)) d.w = 1;
         if ("Z" in d) {
-          week = utcDate(newDate(d.y, 0, 1)), day = week.getUTCDay();
+          week = utcDate(newDate(d.y, 1, 1)), day = week.dayOfWeek;
           week = day > 4 || day === 0 ? utcMonday.ceil(week) : utcMonday(week);
           week = utcDay.offset(week, (d.V - 1) * 7);
-          d.y = week.getUTCFullYear();
-          d.m = week.getUTCMonth();
-          d.d = week.getUTCDate() + (d.w + 6) % 7;
+          d.y = week.year;
+          d.m = week.month;
+          d.d = week.day + (d.w + 6) % 7;
         } else {
-          week = localDate(newDate(d.y, 0, 1)), day = week.getDay();
+          week = localDate(newDate(d.y, 1, 1)), day = week.dayOfWeek;
           week = day > 4 || day === 0 ? timeMonday.ceil(week) : timeMonday(week);
           week = timeDay.offset(week, (d.V - 1) * 7);
-          d.y = week.getFullYear();
-          d.m = week.getMonth();
-          d.d = week.getDate() + (d.w + 6) % 7;
+          d.y = week.year;
+          d.m = week.month;
+          d.d = week.day + (d.w + 6) % 7;
         }
       } else if ("W" in d || "U" in d) {
         if (!("w" in d)) d.w = "u" in d ? d.u % 7 : "W" in d ? 1 : 0;
-        day = "Z" in d ? utcDate(newDate(d.y, 0, 1)).getUTCDay() : localDate(newDate(d.y, 0, 1)).getDay();
-        d.m = 0;
+        day = ("Z" in d ? utcDate : localDate)(newDate(d.y, 1, 1)).dayOfWeek;
+        d.m = 1;
         d.d = "W" in d ? (d.w + 6) % 7 + d.W * 7 - (day + 5) % 7 : d.w + d.U * 7 - (day + 6) % 7;
       }
 
       // If a time zone is specified, all fields are interpreted as UTC and then
       // offset according to the specified time zone.
       if ("Z" in d) {
-        d.H += d.Z / 100 | 0;
-        d.M += d.Z % 100;
-        return utcDate(d);
+        // TODO: Simplify this when negative durations are supported in Temporal
+        var dt = utcDate(d),
+          zh = d.Z / 100 | 0,
+          zm = d.Z % 100;
+        dt = zh < 0 ? dt.minus({ hours: -zh }) : dt.plus({ hours: zh });
+        dt = zm < 0 ? dt.minus({ minutes: -zm }) : dt.plus({ minutes: zm });
+        return dt;
       }
 
       // Otherwise, all fields are in local time.
@@ -288,12 +296,12 @@ export default function formatLocale(locale) {
 
   function parseShortMonth(d, string, i) {
     var n = shortMonthRe.exec(string.slice(i));
-    return n ? (d.m = shortMonthLookup[n[0].toLowerCase()], i + n[0].length) : -1;
+    return n ? (d.m = shortMonthLookup[n[0].toLowerCase()] + 1, i + n[0].length) : -1;
   }
 
   function parseMonth(d, string, i) {
     var n = monthRe.exec(string.slice(i));
-    return n ? (d.m = monthLookup[n[0].toLowerCase()], i + n[0].length) : -1;
+    return n ? (d.m = monthLookup[n[0].toLowerCase()] + 1, i + n[0].length) : -1;
   }
 
   function parseLocaleDateTime(d, string, i) {
@@ -448,12 +456,12 @@ function parseZone(d, string, i) {
 
 function parseQuarter(d, string, i) {
   var n = numberRe.exec(string.slice(i, i + 1));
-  return n ? (d.q = n[0] * 3 - 3, i + n[0].length) : -1;
+  return n ? (d.q = n[0] * 3 - 2, i + n[0].length) : -1;
 }
 
 function parseMonthNumber(d, string, i) {
   var n = numberRe.exec(string.slice(i, i + 2));
-  return n ? (d.m = n[0] - 1, i + n[0].length) : -1;
+  return n ? (d.m = +n[0], i + n[0].length) : -1;
 }
 
 function parseDayOfMonth(d, string, i) {
