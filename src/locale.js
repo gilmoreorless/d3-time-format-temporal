@@ -4,10 +4,7 @@ import {
   timeMonday,
   timeYear,
   utcDay,
-  utcSunday,
   utcMonday,
-  utcThursday,
-  utcYear
 } from "d3-time";
 
 const { Temporal } = require("proposal-temporal");
@@ -89,6 +86,10 @@ export default function formatLocale(locale) {
     "%": formatLiteralPercent
   };
 
+  /*
+  DISABLED: Temporal.DateTime doesn't have "local" versus "UTC", so just alias this to use the
+  same parsing methods. Revisit this if a zoned DateTime gets added to Temporal.
+  
   var utcFormats = {
     "a": formatUTCShortWeekday,
     "A": formatUTCWeekday,
@@ -121,6 +122,8 @@ export default function formatLocale(locale) {
     "Z": formatUTCZone,
     "%": formatLiteralPercent
   };
+  */
+  var utcFormats = formats;
 
   var parses = {
     "a": parseShortWeekday,
@@ -340,6 +343,9 @@ export default function formatLocale(locale) {
     return Math.ceil(d.month / 3);
   }
 
+/*
+  DISABLED: See the comment for `utcFormats`
+
   function formatUTCShortWeekday(d) {
     return locale_shortWeekdays[d.getUTCDay()];
   }
@@ -363,6 +369,7 @@ export default function formatLocale(locale) {
   function formatUTCQuarter(d) {
     return 1 + ~~(d.getUTCMonth() / 3);
   }
+*/
 
   return {
     format: function(specifier) {
@@ -582,6 +589,9 @@ function formatZone() {
   return 'Z'; // DISABLED: DateTime doesn't have time zones
 }
 
+/*
+DISABLED: See the comment for `utcFormats`
+
 function formatUTCDayOfMonth(d, p) {
   return pad(d.getUTCDate(), p, 2);
 }
@@ -652,15 +662,16 @@ function formatUTCFullYear(d, p) {
 function formatUTCZone() {
   return "+0000";
 }
+*/
 
 function formatLiteralPercent() {
   return "%";
 }
 
 function formatUnixTimestamp(d) {
-  return +d;
+  return d.toAbsolute("UTC").getEpochMilliseconds();
 }
 
 function formatUnixTimestampSeconds(d) {
-  return Math.floor(+d / 1000);
+  return d.toAbsolute("UTC").getEpochSeconds();
 }
