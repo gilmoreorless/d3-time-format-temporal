@@ -1,8 +1,6 @@
 import {
   timeDay,
-  timeSunday,
   timeMonday,
-  timeYear,
   utcDay,
   utcMonday,
 } from "d3-time";
@@ -221,21 +219,18 @@ export default function formatLocale(locale) {
       if ("V" in d) {
         if (d.V < 1 || d.V > 53) return null;
         if (!("w" in d)) d.w = 1;
+        var fnDate = localDate, fnDay = timeDay, fnMonday = timeMonday;
         if ("Z" in d) {
-          week = utcDate(newDate(d.y, 1, 1)), day = week.dayOfWeek;
-          week = day > 4 || day === 0 ? utcMonday.ceil(week) : utcMonday(week);
-          week = utcDay.offset(week, (d.V - 1) * 7);
-          d.y = week.year;
-          d.m = week.month;
-          d.d = week.day + (d.w + 6) % 7;
-        } else {
-          week = localDate(newDate(d.y, 1, 1)), day = week.dayOfWeek;
-          week = day > 4 || day === 0 ? timeMonday.ceil(week) : timeMonday(week);
-          week = timeDay.offset(week, (d.V - 1) * 7);
-          d.y = week.year;
-          d.m = week.month;
-          d.d = week.day + (d.w + 6) % 7;
+          fnDate = utcDate;
+          fnDay = utcDay;
+          fnMonday = utcMonday;
         }
+        week = fnDate(newDate(d.y, 1, 1)), day = week.dayOfWeek;
+        week = day > 4 || day === 0 ? fnMonday.ceil(week) : fnMonday(week);
+        week = fnDay.offset(week, (d.V - 1) * 7);
+        d.y = week.year;
+        d.m = week.month;
+        d.d = week.day + (d.w + 6) % 7;
       } else if ("W" in d || "U" in d) {
         if (!("w" in d)) d.w = "u" in d ? d.u % 7 : "W" in d ? 1 : 0;
         day = ("Z" in d ? utcDate : localDate)(newDate(d.y, 1, 1)).dayOfWeek;
@@ -562,7 +557,8 @@ function formatWeekdayNumberMonday(d) {
 }
 
 function formatWeekNumberSunday(d, p) {
-  return pad(timeSunday.count(timeYear(d).minus({ nanoseconds: 1 }), d), p, 2);
+  var firstSundayOfYear = 7 - d.with({ month: 1, day: 1 }).dayOfWeek;
+  return pad(Math.ceil((d.dayOfYear - firstSundayOfYear) / 7), p, 2);
 }
 
 function formatWeekNumberISO(d, p) {
@@ -574,7 +570,8 @@ function formatWeekdayNumberSunday(d) {
 }
 
 function formatWeekNumberMonday(d, p) {
-  return pad(timeMonday.count(timeYear(d).minus({ nanoseconds: 1 }), d), p, 2);
+  var firstMondayOfYear = (8 - d.with({ month: 1, day: 1 }).dayOfWeek) % 7;
+  return pad(Math.ceil((d.dayOfYear + 1 - firstMondayOfYear) / 7), p, 2);
 }
 
 function formatYear(d, p) {
