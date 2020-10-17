@@ -9,7 +9,7 @@ In most places I've attempted to make the minimum amount of changes to make it w
 ## Differences from `d3-time-format`
 
 - All `d3-time-format` methods have been altered to _only_ take or return `Temporal.DateTime` objects where applicable. These are abstract, immutable objects with no fixed time zone. No raw numbers representing milliseconds, no legacy `Date` objects.
-- Due to the abstract nature of `Temporal.DateTime`, the `utc*` methods (`d3.utcFormat()`, `d3.utcParse()`) have been made aliases of the non-UTC versions. To use `Temporal.DateTime` with UTC or local time (or any other time zone), call the [`.toAbsolute(timeZone)` method](https://tc39.es/proposal-temporal/docs/datetime.html#toAbsolute).
+- Due to the abstract nature of `Temporal.DateTime`, the `utc*` methods (`d3.utcFormat()`, `d3.utcParse()`) have been made aliases of the non-UTC versions. To use `Temporal.DateTime` with UTC or local time (or any other time zone), call the [`.toInstant(timeZone)` method](https://tc39.es/proposal-temporal/docs/datetime.html#toInstant).
   - Formatting a zone with `%Z` only ever returns `'Z'`, for the same reason.
 
 See the [full list of commits](https://github.com/gilmoreorless/d3-time-format-temporal/compare/master...temporal-datetime) for step-by-step conversion details.
