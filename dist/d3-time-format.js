@@ -20,10 +20,7 @@ function utcDate(d) {
   }
   var dateTime = new Temporal.DateTime(d.y, d.m, day, d.H, d.M, d.S, d.L);
   if (!dayDiff) return dateTime;
-  // TODO: Simplify this when negative durations are supported in Temporal
-  return dayDiff > 0 ?
-    dateTime.plus({ days: dayDiff }) :
-    dateTime.minus({ days: -dayDiff });
+  return dateTime.plus({ days: dayDiff });
 }
 
 function newDate(y, m, d) {
@@ -203,7 +200,7 @@ function formatLocale(locale) {
       // (Assumes UTC even though Temporal.DateTime has no time zone)
       if ("Q" in d || "s" in d) {
         var millis = "Q" in d ? d.Q : d.s * 1000 + ("L" in d ? d.L : 0);
-        return Temporal.Absolute.fromEpochMilliseconds(millis).toDateTime('UTC');
+        return Temporal.Instant.fromEpochMilliseconds(millis).toDateTime('UTC');
       }
 
       // If this is utcParse, never use the local timezone.
@@ -241,13 +238,10 @@ function formatLocale(locale) {
       // If a time zone is specified, all fields are interpreted as UTC and then
       // offset according to the specified time zone.
       if ("Z" in d) {
-        // TODO: Simplify this when negative durations are supported in Temporal
         var dt = utcDate(d),
           zh = d.Z / 100 | 0,
           zm = d.Z % 100;
-        dt = zh < 0 ? dt.minus({ hours: -zh }) : dt.plus({ hours: zh });
-        dt = zm < 0 ? dt.minus({ minutes: -zm }) : dt.plus({ minutes: zm });
-        return dt;
+        return dt.plus({ hours: zh, minutes: zm });
       }
 
       // Otherwise, all fields are in local time.
@@ -666,11 +660,11 @@ function formatLiteralPercent() {
 }
 
 function formatUnixTimestamp(d) {
-  return d.toAbsolute("UTC").getEpochMilliseconds();
+  return d.toInstant("UTC").getEpochMilliseconds();
 }
 
 function formatUnixTimestampSeconds(d) {
-  return d.toAbsolute("UTC").getEpochSeconds();
+  return d.toInstant("UTC").getEpochSeconds();
 }
 
 var locale;
@@ -696,14 +690,14 @@ function defaultLocale(definition) {
 }
 
 function formatIso(dateTime) {
-  return dateTime.toAbsolute('UTC').toString();
+  return dateTime.toInstant('UTC').toString();
 }
 
 const { Temporal: Temporal$1 } = require("proposal-temporal");
 
 function parseIso(string) {
   try {
-   return Temporal$1.DateTime.from(string);
+    return Temporal$1.DateTime.from(string);
   } catch (err) {
     return null;
   }

@@ -10,6 +10,7 @@ const config = {
     format: "umd",
     indent: false,
     extend: true,
+    sourcemap: true,
     banner: `// ${meta.homepage} v${meta.version} Copyright ${(new Date).getFullYear()} ${meta.author.name}`,
     globals: Object.assign({}, ...Object.keys(meta.dependencies || {}).filter(key => /^d3-/.test(key)).map(key => ({[key]: "d3"})))
   },
