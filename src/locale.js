@@ -203,7 +203,7 @@ export default function formatLocale(locale) {
       // (Assumes UTC even though Temporal.DateTime has no time zone)
       if ("Q" in d || "s" in d) {
         var millis = "Q" in d ? d.Q : d.s * 1000 + ("L" in d ? d.L : 0);
-        return Temporal.Absolute.fromEpochMilliseconds(millis).toDateTime('UTC');
+        return Temporal.Instant.fromEpochMilliseconds(millis).toDateTime('UTC');
       }
 
       // If this is utcParse, never use the local timezone.
@@ -666,9 +666,9 @@ function formatLiteralPercent() {
 }
 
 function formatUnixTimestamp(d) {
-  return d.toAbsolute("UTC").getEpochMilliseconds();
+  return d.toInstant("UTC").getEpochMilliseconds();
 }
 
 function formatUnixTimestampSeconds(d) {
-  return d.toAbsolute("UTC").getEpochSeconds();
+  return d.toInstant("UTC").getEpochSeconds();
 }
