@@ -20,10 +20,7 @@ function utcDate(d) {
   }
   var dateTime = new Temporal.DateTime(d.y, d.m, day, d.H, d.M, d.S, d.L);
   if (!dayDiff) return dateTime;
-  // TODO: Simplify this when negative durations are supported in Temporal
-  return dayDiff > 0 ?
-    dateTime.plus({ days: dayDiff }) :
-    dateTime.minus({ days: -dayDiff });
+  return dateTime.plus({ days: dayDiff });
 }
 
 function newDate(y, m, d) {
@@ -241,13 +238,10 @@ export default function formatLocale(locale) {
       // If a time zone is specified, all fields are interpreted as UTC and then
       // offset according to the specified time zone.
       if ("Z" in d) {
-        // TODO: Simplify this when negative durations are supported in Temporal
         var dt = utcDate(d),
           zh = d.Z / 100 | 0,
           zm = d.Z % 100;
-        dt = zh < 0 ? dt.minus({ hours: -zh }) : dt.plus({ hours: zh });
-        dt = zm < 0 ? dt.minus({ minutes: -zm }) : dt.plus({ minutes: zm });
-        return dt;
+        return dt.plus({ hours: zh, minutes: zm });
       }
 
       // Otherwise, all fields are in local time.
